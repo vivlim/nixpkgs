@@ -7,6 +7,7 @@
 , version ? import ./version.nix
 , srcOverride ? null
 , dependenciesDir ? ./.  # Should contain gemset.nix, yarn.nix and package.json.
+, yarnSha256 ? null
 }:
 
 stdenv.mkDerivation rec {
@@ -15,6 +16,11 @@ stdenv.mkDerivation rec {
   # Using overrideAttrs on src does not build the gems and modules with the overridden src.
   # Putting the callPackage up in the arguments list also does not work.
   src = if srcOverride != null then srcOverride else callPackage ./source.nix {};
+
+  yarnOfflineCache = fetchYarnDeps {
+    yarnLock = "${src}/yarn.lock";
+    sha256 = if yarnSha256 != null then yarnSha256 else "sha256-FCwyJJwZ3/CVPT8LUid+KJcWCmFQet8Cftl7DVYhZ6I=";
+  };
 
   mastodon-gems = bundlerEnv {
     name = "${pname}-gems-${version}";
