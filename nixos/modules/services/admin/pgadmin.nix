@@ -6,7 +6,7 @@ let
   pkg = pkgs.pgadmin4;
   cfg = config.services.pgadmin;
 
-  _base = with types; [ int bool str ];
+  _base = with types; [ int bool str types.attrsOf str ];
   base = with types; oneOf ([ (listOf (oneOf _base)) (attrsOf (oneOf _base)) ] ++ _base);
 
   formatAttrset = attr:
