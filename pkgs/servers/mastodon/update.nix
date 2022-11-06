@@ -13,7 +13,7 @@
 let
   binPath = lib.makeBinPath [ yarn2nix bundix coreutils diffutils nix-prefetch-git gnused jq ];
 in
-runCommand "mastodon-update-script"
+runCommand "update.sh"
 {
   nativeBuildInputs = [ makeWrapper ];
 
