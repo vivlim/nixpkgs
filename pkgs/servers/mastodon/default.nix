@@ -7,6 +7,7 @@
 , version ? import ./version.nix
 , srcOverride ? null
 , dependenciesDir ? ./.  # Should contain gemset.nix, yarn.nix and package.json.
+, yarnOfflineCacheSha256Override ? ""
 }:
 
 stdenv.mkDerivation rec {
@@ -41,8 +42,8 @@ stdenv.mkDerivation rec {
     inherit src version;
 
     yarnOfflineCache = fetchYarnDeps {
-      yarnLock = "${src}/yarn.lock";
-      sha256 = "sha256-2NSibx026ENAqphGGhNoLwUldWTEPbDBrYu3hgeRlnM=";
+      yarnLock = lib.debug.traceVal "${src}/yarn.lock";
+      sha256 = if yarnOfflineCacheSha256Override != "" || srcOverride != null then yarnOfflineCacheSha256Override else "sha256-2NSibx026ENAqphGGhNoLwUldWTEPbDBrYu3hgeRlnM=";
     };
 
     nativeBuildInputs = [ fixup_yarn_lock nodejs-slim yarn mastodon-gems mastodon-gems.wrappedRuby ];
