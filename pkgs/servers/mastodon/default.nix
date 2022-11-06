@@ -42,7 +42,7 @@ stdenv.mkDerivation rec {
     inherit src version;
 
     yarnOfflineCache = fetchYarnDeps {
-      yarnLock = lib.debug.traceVal "${src}/yarn.lock";
+      yarnLock = "${src}/yarn.lock";
       sha256 = if yarnOfflineCacheSha256Override != "" || srcOverride != null then yarnOfflineCacheSha256Override else "sha256-2NSibx026ENAqphGGhNoLwUldWTEPbDBrYu3hgeRlnM=";
     };
 
