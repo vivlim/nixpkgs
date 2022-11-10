@@ -15,11 +15,11 @@ stdenv.mkDerivation rec {
 
   # Using overrideAttrs on src does not build the gems and modules with the overridden src.
   # Putting the callPackage up in the arguments list also does not work.
-  src = if srcOverride != null then srcOverride else callPackage ./source.nix {};
+  src = lib.debug.traceVal (if srcOverride != null then srcOverride else callPackage ./source.nix {});
 
   yarnOfflineCache = fetchYarnDeps {
-    yarnLock = "${src}/yarn.lock";
-    sha256 = if yarnSha256 != null then yarnSha256 else "sha256-FCwyJJwZ3/CVPT8LUid+KJcWCmFQet8Cftl7DVYhZ6I=";
+    yarnLock = lib.debug.traceVal "${src}/yarn.lock";
+    sha256 = lib.debug.traceVal (if yarnSha256 != null then yarnSha256 else "sha256-FCwyJJwZ3/CVPT8LUid+KJcWCmFQet8Cftl7DVYhZ6I=");
   };
 
   mastodon-gems = bundlerEnv {
@@ -52,9 +52,12 @@ stdenv.mkDerivation rec {
     NODE_ENV = "production";
 
     buildPhase = ''
+      echo "enter build phase"
       export HOME=$PWD
       fixup_yarn_lock ~/yarn.lock
+      echo "yarn config --offline set yarn-offline-mirror ${yarnOfflineCache}"
       yarn config --offline set yarn-offline-mirror ${yarnOfflineCache}
+      echo "yarn config --offline set yarn-offline-mirror ${yarnOfflineCache}"
       yarn install --offline --frozen-lockfile --ignore-engines --ignore-scripts --no-progress
 
       patchShebangs ~/bin

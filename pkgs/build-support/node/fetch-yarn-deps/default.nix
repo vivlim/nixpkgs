@@ -61,6 +61,7 @@ in {
 
       buildPhase = ''
         mkdir -p $out
+        echo "fetch-yarn-deps yarnLock: ${yarnLock}"
         (cd $out; prefetch-yarn-deps --verbose --builder ${yarnLock})
       '';
 

@@ -34,6 +34,9 @@ const urlToName = url => {
 }
 
 const downloadFileHttps = (fileName, url, expectedHash) => {
+	if (expectedHash === undefined){
+		console.log(`expectedHash is undefined for filename ${fileName} and url ${url}`);
+	}
 	return new Promise((resolve, reject) => {
 		https.get(url, (res) => {
 			const file = fs.createWriteStream(fileName)
