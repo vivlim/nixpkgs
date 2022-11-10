@@ -96,6 +96,9 @@ const isGitUrl = pattern => {
 const downloadPkg = (pkg, verbose) => {
 	const [ url, hash ] = pkg.resolved.split('#')
 	if (verbose) console.log('downloading ' + url)
+	//if (url === "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001414.tgz"){
+		console.log(JSON.stringify(pkg));
+	//}
 	const fileName = urlToName(url)
 	if (url.startsWith('https://codeload.github.com/') && url.includes('/tar.gz/')) {
 		const s = url.split('/')
