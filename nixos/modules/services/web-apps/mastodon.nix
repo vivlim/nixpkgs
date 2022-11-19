@@ -102,7 +102,7 @@ let
 
   sidekiqUnits = lib.attrsets.mapAttrs' (name: processCfg: 
     lib.nameValuePair "mastodon-sidekiq-${name}" (let
-      jobClassArg = if (builtins.length processCfg.jobClasses) > 0 then ("-q " + lib.concatStringsSep "," processCfg.jobClasses) else "";
+      jobClassArgs = lib.concatStringsSep " " (builtins.map (c: "-q ${c}") processCfg.jobClasses);
     in {
       after = [ "network.target" ]
         ++ (if databaseActuallyCreateLocally then [ "postgresql.service" ] else [])
@@ -114,7 +114,7 @@ let
         DB_POOL = toString processCfg.threads;
       };
       serviceConfig = {
-        ExecStart = "${cfg.package}/bin/sidekiq ${jobClassArg} -c ${toString processCfg.threads} -r ${cfg.package}";
+        ExecStart = "${cfg.package}/bin/sidekiq ${jobClassArgs} -c ${toString processCfg.threads} -r ${cfg.package}";
         Restart = "always";
         RestartSec = 20;
         EnvironmentFile = "/var/lib/mastodon/.secrets_env";
