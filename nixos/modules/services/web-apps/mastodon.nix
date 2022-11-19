@@ -100,6 +100,32 @@ let
     eval -- "\$@"
   '';
 
+  sidekiqUnits = lib.attrsets.mapAttrs' (name: processCfg: 
+    lib.nameValuePair "mastodon-sidekiq-${name}" (let
+      jobClassArg = if (builtins.length processCfg.jobClasses) > 0 then ("-q " + lib.concatStringsSep "," processCfg.jobClasses) else "";
+    in {
+      after = [ "network.target" ]
+        ++ (if databaseActuallyCreateLocally then [ "postgresql.service" ] else [])
+        ++ (if cfg.automaticMigrations then [ "mastodon-init-db.service" ] else [ "mastodon-init-dirs.service" ]);
+      description = "Mastodon sidekiq";
+      wantedBy = [ "multi-user.target" ];
+      environment = env // {
+        PORT = toString(cfg.sidekiqPort);
+        DB_POOL = toString processCfg.threads;
+      };
+      serviceConfig = {
+        ExecStart = "${cfg.package}/bin/sidekiq ${jobClassArg} -c ${toString processCfg.threads} -r ${cfg.package}";
+        Restart = "always";
+        RestartSec = 20;
+        EnvironmentFile = "/var/lib/mastodon/.secrets_env";
+        WorkingDirectory = cfg.package;
+        # System Call Filtering
+        SystemCallFilter = [ ("~" + lib.concatStringsSep " " systemCallsList) "@chown" "pipe" "pipe2" ];
+      } // cfgService;
+      path = with pkgs; [ file imagemagick ffmpeg ];
+    })
+  ) cfg.sidekiqProcesses;
+
 in {
 
   options = {
@@ -190,10 +216,45 @@ in {
         type = lib.types.port;
         default = 55002;
       };
-      sidekiqThreads = lib.mkOption {
-        description = lib.mdDoc "Worker threads used by the mastodon-sidekiq service.";
-        type = lib.types.int;
-        default = 25;
+
+      sidekiqProcesses = lib.mkOption {
+        description = "Sidekiq processes used to handle background jobs.";
+        type = with lib.types; attrsOf (submodule {
+          options = {
+            jobClasses = lib.mkOption {
+              type = listOf (enum [ "default" "push" "pull" "mailers" "scheduler" "ingress" ]);
+              description = "If not empty, which job classes should be executed by this process. *Only one process should handle the 'scheduler' class.*";
+            };
+            threads = lib.mkOption {
+              type = int;
+              description = "Number of threads this process should use for executing jobs.";
+            };
+          };
+        });
+        default = {
+          all = {
+            jobClasses = [ ];
+            threads = 25;
+          };
+        };
+        example = {
+          all = {
+            jobClasses = [ ];
+            threads = 15;
+          };
+          ingress = {
+            jobClasses = [ "ingress" ];
+            threads = 5;
+          };
+          default = {
+            jobClasses = [ "default" ];
+            threads = 10;
+          };
+          push-pull = {
+            jobClasses = [ "push" "pull" ];
+            threads = 5;
+          };
+        };
       };
 
       vapidPublicKeyFile = lib.mkOption {
@@ -471,7 +532,7 @@ in {
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable (lib.attrsets.recursiveUpdate {
     assertions = [
       {
         assertion = databaseActuallyCreateLocally -> (cfg.user == cfg.database.user);
@@ -623,31 +684,6 @@ in {
       path = with pkgs; [ file imagemagick ffmpeg ];
     };
 
-    systemd.services.mastodon-sidekiq = {
-      after = [ "network.target" "mastodon-init-dirs.service" ]
-        ++ lib.optional databaseActuallyCreateLocally "postgresql.service"
-        ++ lib.optional cfg.automaticMigrations "mastodon-init-db.service";
-      requires = [ "mastodon-init-dirs.service" ]
-        ++ lib.optional databaseActuallyCreateLocally "postgresql.service"
-        ++ lib.optional cfg.automaticMigrations "mastodon-init-db.service";
-      wantedBy = [ "multi-user.target" ];
-      description = "Mastodon sidekiq";
-      environment = env // {
-        PORT = toString(cfg.sidekiqPort);
-        DB_POOL = toString cfg.sidekiqThreads;
-      };
-      serviceConfig = {
-        ExecStart = "${cfg.package}/bin/sidekiq -c ${toString cfg.sidekiqThreads} -r ${cfg.package}";
-        Restart = "always";
-        RestartSec = 20;
-        EnvironmentFile = "/var/lib/mastodon/.secrets_env";
-        WorkingDirectory = cfg.package;
-        # System Call Filtering
-        SystemCallFilter = [ ("~" + lib.concatStringsSep " " systemCallsList) "@chown" "pipe" "pipe2" ];
-      } // cfgService;
-      path = with pkgs; [ file imagemagick ffmpeg ];
-    };
-
     systemd.services.mastodon-media-auto-remove = lib.mkIf cfg.mediaAutoRemove.enable {
       description = "Mastodon media auto remove";
       environment = env;
@@ -722,7 +758,7 @@ in {
     ];
 
     users.groups.${cfg.group}.members = lib.optional cfg.configureNginx config.services.nginx.user;
-  };
+  } { systemd.services = sidekiqUnits; });
 
   meta.maintainers = with lib.maintainers; [ happy-river erictapen ];
 
