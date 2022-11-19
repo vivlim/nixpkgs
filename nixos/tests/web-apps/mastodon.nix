@@ -138,7 +138,7 @@ in
     server.wait_for_unit("nginx.service")
     server.wait_for_unit("redis-mastodon.service")
     server.wait_for_unit("postgresql.service")
-    server.wait_for_unit("mastodon-sidekiq.service")
+    server.wait_for_unit("mastodon-sidekiq-all.service")
     server.wait_for_unit("mastodon-streaming.service")
     server.wait_for_unit("mastodon-web.service")
     server.wait_for_open_port(55000)
