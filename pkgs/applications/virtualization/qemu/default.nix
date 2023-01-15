@@ -111,6 +111,14 @@ stdenv.mkDerivation rec {
       sha256 = "sha256-oC+bRjEHixv1QEFO9XAm4HHOwoiT+NkhknKGPydnZ5E=";
       revert = true;
     })
+    # Patch to hopefully workaround issue with building boehm-gc
+    # patch: https://gitlab.com/rth7680/qemu/-/commit/8f97897fee6b551501dfbe9639d60fd85bd78af1
+    # some context: https://gitlab.com/qemu-project/qemu/-/issues/1147
+    # in upstream: https://github.com/ivmai/bdwgc/issues/376, setting NO_SOFT_VDB did not help fsr. it was set in my build
+    # and it was set because I had this commit https://github.com/NixOS/nixpkgs/pull/199978
+    # disabling the test seems to be a bad idea? that's the approach here: https://github.com/NixOS/nixpkgs/pull/198591 which i have not tried.
+    ./refactor_cpu_exec.patch
+
   ]
   ++ lib.optional nixosTestRunner ./force-uid0-on-9p.patch;
 
