@@ -17,11 +17,6 @@ stdenv.mkDerivation rec {
   # Putting the callPackage up in the arguments list also does not work.
   src = if srcOverride != null then srcOverride else callPackage ./source.nix {};
 
-  yarnOfflineCache = fetchYarnDeps {
-    yarnLock = "${src}/yarn.lock";
-    sha256 = if yarnSha256 != null then yarnSha256 else "sha256-FCwyJJwZ3/CVPT8LUid+KJcWCmFQet8Cftl7DVYhZ6I=";
-  };
-
   mastodon-gems = bundlerEnv {
     name = "${pname}-gems-${version}";
     inherit version;
@@ -48,7 +43,7 @@ stdenv.mkDerivation rec {
 
     yarnOfflineCache = fetchYarnDeps {
       yarnLock = "${src}/yarn.lock";
-      sha256 = "sha256-fuU92fydoazSXBHwA+DG//gRgWVYQ1M3m2oNS2iwv4I=";
+      sha256 = if yarnSha256 != null then yarnSha256 else "sha256-FCwyJJwZ3/CVPT8LUid+KJcWCmFQet8Cftl7DVYhZ6I=";
     };
 
     nativeBuildInputs = [ fixup_yarn_lock nodejs-slim yarn mastodon-gems mastodon-gems.wrappedRuby ];
