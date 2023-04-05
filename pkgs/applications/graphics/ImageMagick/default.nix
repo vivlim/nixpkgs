@@ -30,6 +30,7 @@
 , Foundation
 , testers
 , imagemagick
+, python3
 }:
 
 assert libXtSupport -> libX11Support;
@@ -44,15 +45,15 @@ let
     else null;
 in
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "imagemagick";
-  version = "7.1.0-57";
+  version = "7.1.1-5";
 
   src = fetchFromGitHub {
     owner = "ImageMagick";
     repo = "ImageMagick";
-    rev = version;
-    hash = "sha256-1fFsrsrY8AAMr6miG8OPZIYaVZhtVi5kEaI/96dzip8=";
+    rev = finalAttrs.version;
+    hash = "sha256-UR5BHCWaecbSF49IMKP/fE+oVVjMlTK41bKcGMtD+O4=";
   };
 
   outputs = [ "out" "dev" "doc" ]; # bin/ isn't really big
@@ -122,8 +123,10 @@ stdenv.mkDerivation rec {
     done
   '';
 
-  passthru.tests.version =
-    testers.testVersion { package = imagemagick; };
+  passthru.tests = {
+    version = testers.testVersion { package = imagemagick; };
+    inherit (python3.pkgs) img2pdf;
+  };
 
   meta = with lib; {
     homepage = "http://www.imagemagick.org/";
@@ -133,4 +136,4 @@ stdenv.mkDerivation rec {
     license = licenses.asl20;
     mainProgram = "magick";
   };
-}
+})

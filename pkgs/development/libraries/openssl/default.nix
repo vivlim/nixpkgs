@@ -2,6 +2,7 @@
 , withCryptodev ? false, cryptodev
 , enableSSL2 ? false
 , enableSSL3 ? false
+, enableKTLS ? stdenv.isLinux
 , static ? stdenv.hostPlatform.isStatic
 # Used to avoid cross compiling perl, for example, in darwin bootstrap tools.
 # This will cause c_rehash to refer to perl via the environment, but otherwise
@@ -131,7 +132,7 @@ let
       ++ lib.optional enableSSL3 "enable-ssl3"
       # We select KTLS here instead of the configure-time detection (which we patch out).
       # KTLS should work on FreeBSD 13+ as well, so we could enable it if someone tests it.
-      ++ lib.optional (stdenv.isLinux && lib.versionAtLeast version "3.0.0") "enable-ktls"
+      ++ lib.optional (lib.versionAtLeast version "3.0.0" && enableKTLS) "enable-ktls"
       ++ lib.optional (lib.versionAtLeast version "1.1.1" && stdenv.hostPlatform.isAarch64) "no-afalgeng"
       # OpenSSL needs a specific `no-shared` configure flag.
       # See https://wiki.openssl.org/index.php/Compilation_and_Installation#Configure_Options
@@ -216,8 +217,8 @@ in {
 
 
   openssl_1_1 = common {
-    version = "1.1.1s";
-    sha256 = "sha256-xawB52Dub/Dath1rK70wFGck0GPrMiGAxvGKb3Tktqo=";
+    version = "1.1.1t";
+    sha256 = "sha256-je6bJL2x3L8MPR6bAvuPa/IhZegH9Fret8lndTaFnTs=";
     patches = [
       ./1.1/nix-ssl-cert-file.patch
 
@@ -229,8 +230,8 @@ in {
   };
 
   openssl_3 = common {
-    version = "3.0.7";
-    sha256 = "sha256-gwSdBComDmlvYkBqxcCL9wb9hDg/lFzyG9YentlcOW4=";
+    version = "3.0.8";
+    sha256 = "sha256-bBPSvzj98x6sPOKjRwc2c/XWMmM5jx9p0N9KQSU+Sz4=";
     patches = [
       ./3.0/nix-ssl-cert-file.patch
 
@@ -241,9 +242,6 @@ in {
       (if stdenv.hostPlatform.isDarwin
        then ./use-etc-ssl-certs-darwin.patch
        else ./use-etc-ssl-certs.patch)
-
-       # Remove with 3.0.8 release
-       ./3.0/CVE-2022-3996.patch
     ];
 
     withDocs = true;
