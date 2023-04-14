@@ -705,8 +705,8 @@ let
         mktplcRef = {
           name = "vscode-eslint";
           publisher = "dbaeumer";
-          version = "2.2.6";
-          sha256 = "sha256-1yZeyLrXuubhKzobWcd00F/CdU824uJDTkB6qlHkJlQ=";
+          version = "2.4.0";
+          sha256 = "sha256-7MUQJkLPOF3oO0kpmfP3bWbS3aT7J0RF7f74LW55BQs=";
         };
         meta = with lib; {
           changelog = "https://marketplace.visualstudio.com/items/dbaeumer.vscode-eslint/changelog";
@@ -1693,6 +1693,23 @@ let
         meta.license = lib.licenses.mit;
       };
 
+      matthewpi.caddyfile-support = buildVscodeMarketplaceExtension {
+        mktplcRef = {
+          name = "caddyfile-support";
+          publisher = "matthewpi";
+          version = "0.2.4";
+          sha256 = "sha256-7D7fNlI55MxD6M8ml/dzBAMwCGCEkC+9aKhreZCVMv4=";
+        };
+        meta = {
+          description = "Rich Caddyfile support for Visual Studio Code";
+          downloadPage = "https://marketplace.visualstudio.com/items?itemName=matthewpi.caddyfile-support";
+          homepage = "https://github.com/caddyserver/vscode-caddyfile";
+          changelog = "https://marketplace.visualstudio.com/items/matthewpi.caddyfile-support/changelog";
+          license = lib.licenses.mit;
+          maintainers = with lib.maintainers; [ matthewpi ];
+        };
+      };
+
       mattn.lisp = buildVscodeMarketplaceExtension {
         mktplcRef = {
           name = "lisp";
@@ -2522,8 +2539,8 @@ let
         mktplcRef = {
           name = "code-spell-checker";
           publisher = "streetsidesoftware";
-          version = "2.14.0";
-          sha256 = "sha256-DvcQ0wNmWqmMen7jYVP0tCDz/wdzBb56An+OaD3d4xA=";
+          version = "2.20.3";
+          sha256 = "sha256-28ybNBobXoq194d9VGD9kOq/OWscJkSlgSZ7ViaNQtw=";
         };
         meta = with lib; {
           changelog = "https://marketplace.visualstudio.com/items/streetsidesoftware.code-spell-checker/changelog";

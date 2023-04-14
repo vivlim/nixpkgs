@@ -346,14 +346,22 @@ final: prev: {
     };
     nativeBuildInputs = [ pkgs.buildPackages.makeWrapper ];
     postInstall = let
-      # Needed to fix Node.js 16+ - PR svanderburg/node2nix#302
-      npmPatch = fetchpatch {
-        name = "emit-lockfile-v2-and-fix-bin-links-with-npmv7.patch";
-        url = "https://github.com/svanderburg/node2nix/commit/375a055041b5ee49ca5fb3f74a58ca197c90c7d5.patch";
-        hash = "sha256-uVYrXptJILojeur9s2O+J/f2vyPNCaZMn1GM/NoC5n8=";
-      };
+      patches = [
+        # Needed to fix Node.js 16+ - PR svanderburg/node2nix#302
+        (fetchpatch {
+          name = "emit-lockfile-v2-and-fix-bin-links-with-npmv7.patch";
+          url = "https://github.com/svanderburg/node2nix/commit/375a055041b5ee49ca5fb3f74a58ca197c90c7d5.patch";
+          hash = "sha256-uVYrXptJILojeur9s2O+J/f2vyPNCaZMn1GM/NoC5n8=";
+        })
+        # Needed to fix packages with DOS line-endings after above patch - PR svanderburg/node2nix#314
+        (fetchpatch {
+          name = "convert-crlf-for-script-bin-files.patch";
+          url = "https://github.com/svanderburg/node2nix/commit/91aa511fe7107938b0409a02ab8c457a6de2d8ca.patch";
+          hash = "sha256-ISiKYkur/o8enKDzJ8mQndkkSC4yrTNlheqyH+LiXlU=";
+        })
+      ];
     in ''
-      patch -d $out/lib/node_modules/node2nix -p1 < ${npmPatch}
+      ${lib.concatStringsSep "\n" (map (patch: "patch -d $out/lib/node_modules/node2nix -p1 < ${patch}") patches)}
       wrapProgram "$out/bin/node2nix" --prefix PATH : ${lib.makeBinPath [ pkgs.nix ]}
     '';
   };
@@ -443,6 +451,26 @@ final: prev: {
       ]}
     '';
   };
+
+  readability-cli = prev.readability-cli.override (oldAttrs: {
+    # Wrap src to fix this build error:
+    # > readability-cli/readable.ts: unsupported interpreter directive "#!/usr/bin/env -S deno..."
+    #
+    # Need to wrap the source, instead of patching in patchPhase, because
+    # buildNodePackage only unpacks sources in the installPhase.
+    src = pkgs.srcOnly {
+      src = oldAttrs.src;
+      name = oldAttrs.name;
+      patchPhase = "chmod a-x readable.ts";
+    };
+
+    nativeBuildInputs = [ pkgs.pkg-config ];
+    buildInputs = with pkgs; [
+      pixman
+      cairo
+      pango
+    ];
+  });
 
   reveal-md = prev.reveal-md.override (
     lib.optionalAttrs (!stdenv.isDarwin) {
